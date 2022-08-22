@@ -1,8 +1,8 @@
 package i18n
 
 import (
+	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path"
 	"strings"
@@ -11,79 +11,19 @@ import (
 )
 
 type GolangI18nGenerator struct {
-	params      *I18nGeneratorParams
-	excelHelper *pkg.ExcelHelper
-	langs       []string
+	BaseGenerator
 }
 
 func NewGolangI18nGenerator(params *I18nGeneratorParams) I18nGenerator {
-	return &GolangI18nGenerator{
-		params:      params,
-		excelHelper: pkg.NewExcelHelper(params.ExcelFile, params.SheetName),
-		langs:       []string{"en", "zh_cn", "zh_tw", "ar", "id", "ko", "ms", "th", "tr", "vi", "ja", "bn", "hi", "ur"},
-	}
+	return &GolangI18nGenerator{NewBaseGenerator(params)}
 }
 
 func (g *GolangI18nGenerator) Run() error {
-	err := g.excelHelper.Open()
-	if err != nil {
-		return err
-	}
-	keys, err := g.excelHelper.GetKeys()
-	if err != nil {
-		return err
-	}
-	rows, err := g.excelHelper.GetRows(keys, true)
-	if err != nil {
-		return err
-	}
-	outFiles, err := g.getOutFiles()
-	if err != nil {
-		return err
-	}
-	defer func() {
-		for _, f := range outFiles {
-			if f != nil {
-				f.Close()
-			}
-		}
-	}()
-	hadnledKeys := make(map[string]bool)
-	for _, row := range rows {
-		key := row["key"]
-		if key == "" {
-			continue
-		}
-		if _, ok := hadnledKeys[key]; ok {
-			log.Println("This key has been handled:", key)
-			continue
-		}
-		key = strings.TrimPrefix(key, "'")
-		key = strings.TrimPrefix(key, "\"")
-		key = strings.TrimSuffix(key, "'")
-		key = strings.TrimSuffix(key, "\"")
-		for k, v := range row {
-			if v == "" {
-				continue
-			}
-			v = strings.TrimPrefix(v, "'")
-			v = strings.TrimPrefix(v, "\"")
-			v = strings.TrimSuffix(v, "'")
-			v = strings.TrimSuffix(v, "\"")
-			v = strings.ReplaceAll(v, "\"", "\\\"")
-			lang := strings.ToLower(k)
-			if f, ok := outFiles[lang]; ok {
-				line := "\"" + key + "\" = \"" + v + "\""
-				_, err := fmt.Fprintln(f, line)
-				if err != nil {
-					return err
-				}
-			}
-		}
-		hadnledKeys[key] = true
-	}
+	return g.BaseGenerator.Run(g.generateLine, g.getOutFiles, g.after)
+}
 
-	return nil
+func (g *GolangI18nGenerator) generateLine(key, value string) string {
+	return "\"" + key + "\" = \"" + value + "\""
 }
 
 func (g *GolangI18nGenerator) getOutFiles() (map[string]*os.File, error) {
@@ -101,4 +41,19 @@ func (g *GolangI18nGenerator) getOutFiles() (map[string]*os.File, error) {
 		outFiles[lang] = f
 	}
 	return outFiles, nil
+}
+
+func (g *GolangI18nGenerator) after(fs map[string]*os.File) error {
+	var err error
+	var errs []string
+	for k, f := range fs {
+		err = f.Close()
+		if err != nil {
+			errs = append(errs, fmt.Sprintf("close file %s error: %s", k, err.Error()))
+		}
+	}
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, "\n"))
+	}
+	return nil
 }

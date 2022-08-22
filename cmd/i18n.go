@@ -9,17 +9,18 @@ import (
 )
 
 var (
-	excelFile string
-	sheetName string
-	outDir    string
-	outFile   string
+	excelFile    string
+	sheetName    string
+	outDir       string
+	outFile      string
+	includeLangs string
 )
 
 var i18nCmd = &cobra.Command{
 	Use:       "i18n",
 	Short:     "生成多语言文件",
 	Long:      "根据 Excel 文件、编程语言，生成对应的多语言配置文件",
-	Example:   "./bin/tools i18n go -f excel.xlsx -s Sheet1 -O ./out -o data",
+	Example:   "./bin/tools i18n go -f excel.xlsx -s Sheet1 -O ./out -o data --include.language en",
 	Args:      cobra.ExactValidArgs(1),
 	ValidArgs: []string{"go", "php"},
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -30,6 +31,7 @@ var i18nCmd = &cobra.Command{
 			OutDir:     outDir,
 			OutFile:    outFile,
 			TargetLang: args[0],
+			TextLang:   includeLangs,
 		}
 		generator := i18n.NewI18nGenerator(params)
 		if generator == nil {
@@ -49,4 +51,5 @@ func init() {
 	i18nCmd.Flags().StringVarP(&sheetName, "excel.sheet", "s", "Sheet1", "Excel 表格名称")
 	i18nCmd.Flags().StringVarP(&outDir, "out.dir", "O", "./out", "输出目录")
 	i18nCmd.Flags().StringVarP(&outFile, "out.file", "o", "data", "输出文件名, 仅生成 go 语言的配置文件时有效, PHP 的配置文件固定为对应语言(如 ar.php)")
+	i18nCmd.Flags().StringVar(&includeLangs, "include.language", "all", "想要生成的语言, 可以使用逗号分隔, 如 en,zh_cn,zh_tw")
 }

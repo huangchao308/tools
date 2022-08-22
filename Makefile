@@ -12,7 +12,8 @@ build:
 
 .PHONY: clean
 clean:
-	$(GOCLEAN)
+	rm -rf bin/
+	rm -rf out/
 
 .PHONY: test
 test:
