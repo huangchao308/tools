@@ -9,11 +9,12 @@ import (
 )
 
 var (
-	excelFile    string
-	sheetName    string
-	outDir       string
-	outFile      string
-	includeLangs string
+	excelFile   string
+	sheetName   string
+	outDir      string
+	outFile     string
+	includeLang string
+	oldFile     string
 )
 
 var i18nCmd = &cobra.Command{
@@ -25,13 +26,15 @@ var i18nCmd = &cobra.Command{
 	ValidArgs: []string{"go", "php"},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		log.Println("tartget lang:", args[0])
+		log.Printf("excelFile: %s, sheetName: %s, outDir: %s, outFile: %s, includeLang: %s, oldFile: %s", excelFile, sheetName, outDir, outFile, includeLang, oldFile)
 		params := &i18n.I18nGeneratorParams{
 			ExcelFile:  excelFile,
 			SheetName:  sheetName,
 			OutDir:     outDir,
 			OutFile:    outFile,
 			TargetLang: args[0],
-			TextLang:   includeLangs,
+			TextLang:   includeLang,
+			OldFile:    oldFile,
 		}
 		generator := i18n.NewI18nGenerator(params)
 		if generator == nil {
@@ -51,5 +54,6 @@ func init() {
 	i18nCmd.Flags().StringVarP(&sheetName, "excel.sheet", "s", "Sheet1", "Excel 表格名称")
 	i18nCmd.Flags().StringVarP(&outDir, "out.dir", "O", "./out", "输出目录")
 	i18nCmd.Flags().StringVarP(&outFile, "out.file", "o", "data", "输出文件名, 仅生成 go 语言的配置文件时有效, PHP 的配置文件固定为对应语言(如 ar.php)")
-	i18nCmd.Flags().StringVar(&includeLangs, "include.language", "all", "想要生成的语言, 可以使用逗号分隔, 如 en,zh_cn,zh_tw")
+	i18nCmd.Flags().StringVar(&includeLang, "include.language", "all", "想要生成的语言")
+	i18nCmd.Flags().StringVar(&oldFile, "old.file", "", "老的多语言配置文件, 用于合并新旧的文件")
 }

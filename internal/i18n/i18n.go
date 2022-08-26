@@ -20,6 +20,7 @@ type I18nGeneratorParams struct {
 	OutFile    string
 	TargetLang string
 	TextLang   string
+	OldFile    string
 }
 
 type BaseGenerator struct {
@@ -31,7 +32,7 @@ type BaseGenerator struct {
 func NewBaseGenerator(params *I18nGeneratorParams) BaseGenerator {
 	langs := []string{"en", "zh_cn", "zh_tw", "ar", "id", "ko", "ms", "th", "tr", "vi", "ja", "bn", "hi", "ur"}
 	if params.TextLang != "all" {
-		langs = strings.Split(params.TextLang, ",")
+		langs = []string{params.TextLang}
 	}
 	return BaseGenerator{
 		params:      params,
@@ -50,7 +51,7 @@ func (g *BaseGenerator) formatString(key string) string {
 	return key
 }
 
-func (g *BaseGenerator) Run(generateLine func(k, v string) string, getOutFiles func() (map[string]*os.File, error), after func(fs map[string]*os.File) error) error {
+func (g *BaseGenerator) Run(generateLine func(k, v string) string, getOutFiles func() (map[string]*os.File, error), after func(fs map[string]*os.File) error, old map[string]string) error {
 	err := g.excelHelper.Open()
 	if err != nil {
 		return err
@@ -81,6 +82,10 @@ func (g *BaseGenerator) Run(generateLine func(k, v string) string, getOutFiles f
 			log.Println("This key has been handled:", key)
 			continue
 		}
+		if _, ok := old[key]; !ok {
+			log.Printf("This key %s is ignored", key)
+			continue
+		}
 		for k, v := range row {
 			if v == "" {
 				continue
@@ -96,6 +101,25 @@ func (g *BaseGenerator) Run(generateLine func(k, v string) string, getOutFiles f
 			}
 		}
 		hadnledKeys[key] = true
+	}
+
+	// 合并旧的 key
+	if g.params.TextLang != "" && g.params.TextLang != "all" {
+		f, ok := outFiles[g.params.TextLang]
+		log.Println(ok)
+		if !ok {
+			return nil
+		}
+		for k, v := range old {
+			if _, ok := hadnledKeys[k]; !ok {
+				log.Printf("merge old key: %s, value: %s", k, v)
+				line := generateLine(k, v)
+				_, err := fmt.Fprintln(f, line)
+				if err != nil {
+					return err
+				}
+			}
+		}
 	}
 
 	return nil

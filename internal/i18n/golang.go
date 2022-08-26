@@ -1,8 +1,10 @@
 package i18n
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"strings"
@@ -19,7 +21,7 @@ func NewGolangI18nGenerator(params *I18nGeneratorParams) I18nGenerator {
 }
 
 func (g *GolangI18nGenerator) Run() error {
-	return g.BaseGenerator.Run(g.generateLine, g.getOutFiles, g.after)
+	return g.BaseGenerator.Run(g.generateLine, g.getOutFiles, g.after, g.getOldKvFromFile())
 }
 
 func (g *GolangI18nGenerator) generateLine(key, value string) string {
@@ -34,7 +36,7 @@ func (g *GolangI18nGenerator) getOutFiles() (map[string]*os.File, error) {
 		if err != nil {
 			return nil, err
 		}
-		f, err := os.OpenFile(path.Join(dir, g.params.OutFile+".toml"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0755)
+		f, err := os.OpenFile(path.Join(dir, g.params.OutFile+".toml"), os.O_RDWR|os.O_CREATE, 0755)
 		if err != nil {
 			return nil, err
 		}
@@ -56,4 +58,34 @@ func (g *GolangI18nGenerator) after(fs map[string]*os.File) error {
 		return errors.New(strings.Join(errs, "\n"))
 	}
 	return nil
+}
+
+func (g *GolangI18nGenerator) getOldKvFromFile() map[string]string {
+	result := make(map[string]string)
+	fs, err := os.Open(g.params.OldFile)
+	if err != nil {
+		log.Println(err.Error())
+		return result
+	}
+	defer fs.Close()
+	scanner := bufio.NewScanner(fs)
+	for scanner.Scan() {
+		key := ""
+		value := ""
+		line := scanner.Text()
+		str := strings.Split(line, "=")
+		if len(str) > 1 {
+			key = str[0]
+			key = strings.TrimSpace(key)
+			key = strings.Trim(key, "\"")
+			key = strings.Trim(key, "'")
+			value = str[1]
+			value = strings.TrimSpace(value)
+			value = strings.Trim(value, "\"")
+			value = strings.Trim(value, "'")
+			result[key] = value
+		}
+	}
+
+	return result
 }
