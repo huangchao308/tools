@@ -48,6 +48,7 @@ func (g *BaseGenerator) formatString(key string) string {
 	key = strings.TrimSuffix(key, "'")
 	key = strings.TrimSuffix(key, "\"")
 	key = strings.ReplaceAll(key, "\"", "\\\"")
+	key = strings.ReplaceAll(key, "\n", "\\n")
 	return key
 }
 
@@ -78,13 +79,16 @@ func (g *BaseGenerator) Run(generateLine func(k, v string) string, getOutFiles f
 			continue
 		}
 		key = g.formatString(key)
+		key = g.params.OutFile + "." + key
 		if _, ok := hadnledKeys[key]; ok {
 			log.Println("This key has been handled:", key)
 			continue
 		}
-		if _, ok := old[key]; !ok {
-			log.Printf("This key %s is ignored", key)
-			continue
+		if len(old) > 0 {
+			if _, ok := old[key]; !ok {
+				log.Printf("This key %s is ignored", key)
+				continue
+			}
 		}
 		for k, v := range row {
 			if v == "" {

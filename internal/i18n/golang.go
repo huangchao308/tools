@@ -62,6 +62,9 @@ func (g *GolangI18nGenerator) after(fs map[string]*os.File) error {
 
 func (g *GolangI18nGenerator) getOldKvFromFile() map[string]string {
 	result := make(map[string]string)
+	if g.params.OldFile == "" {
+		return result
+	}
 	fs, err := os.Open(g.params.OldFile)
 	if err != nil {
 		log.Println(err.Error())
