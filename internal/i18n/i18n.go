@@ -21,6 +21,7 @@ type I18nGeneratorParams struct {
 	TargetLang string
 	TextLang   string
 	OldFile    string
+	Overwrite  bool
 }
 
 type BaseGenerator struct {
@@ -58,6 +59,7 @@ func (g *BaseGenerator) Run(generateLine func(k, v string) string, getOutFiles f
 		return err
 	}
 	keys, err := g.excelHelper.GetKeys()
+	log.Printf("keys: %v\n", keys)
 	if err != nil {
 		return err
 	}
@@ -84,7 +86,7 @@ func (g *BaseGenerator) Run(generateLine func(k, v string) string, getOutFiles f
 			log.Println("This key has been handled:", key)
 			continue
 		}
-		if len(old) > 0 {
+		if !g.params.Overwrite && len(old) > 0 {
 			if _, ok := old[key]; !ok {
 				log.Printf("This key %s is ignored", key)
 				continue
@@ -116,7 +118,7 @@ func (g *BaseGenerator) Run(generateLine func(k, v string) string, getOutFiles f
 		}
 		for k, v := range old {
 			if _, ok := hadnledKeys[k]; !ok {
-				log.Printf("merge old key: %s, value: %s", k, v)
+				// log.Printf("merge old key: %s, value: %s", k, v)
 				line := generateLine(k, v)
 				_, err := fmt.Fprintln(f, line)
 				if err != nil {

@@ -15,6 +15,7 @@ var (
 	outFile     string
 	includeLang string
 	oldFile     string
+	overwrite   bool
 )
 
 var i18nCmd = &cobra.Command{
@@ -35,6 +36,7 @@ var i18nCmd = &cobra.Command{
 			TargetLang: args[0],
 			TextLang:   includeLang,
 			OldFile:    oldFile,
+			Overwrite:  overwrite,
 		}
 		generator := i18n.NewI18nGenerator(params)
 		if generator == nil {
@@ -56,4 +58,5 @@ func init() {
 	i18nCmd.Flags().StringVarP(&outFile, "out.file", "o", "data", "输出文件名, 仅生成 go 语言的配置文件时有效, PHP 的配置文件固定为对应语言(如 ar.php)")
 	i18nCmd.Flags().StringVar(&includeLang, "include.language", "all", "想要生成的语言")
 	i18nCmd.Flags().StringVar(&oldFile, "old.file", "", "老的多语言配置文件, 用于合并新旧的文件")
+	i18nCmd.Flags().BoolVar(&overwrite, "overwrite", true, "是否覆盖旧的翻译")
 }
