@@ -17,6 +17,7 @@ type GolangI18nGenerator struct {
 }
 
 func NewGolangI18nGenerator(params *I18nGeneratorParams) I18nGenerator {
+	params.KeyPrefix = true
 	return &GolangI18nGenerator{NewBaseGenerator(params)}
 }
 

@@ -17,6 +17,7 @@ type PhpI18nGenerator struct {
 }
 
 func NewPhpI18nGenerator(params *I18nGeneratorParams) I18nGenerator {
+	params.KeyPrefix = false
 	return &PhpI18nGenerator{NewBaseGenerator(params)}
 }
 

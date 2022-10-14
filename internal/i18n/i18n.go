@@ -22,6 +22,7 @@ type I18nGeneratorParams struct {
 	TextLang   string
 	OldFile    string
 	Overwrite  bool
+	KeyPrefix  bool
 }
 
 type BaseGenerator struct {
@@ -81,7 +82,10 @@ func (g *BaseGenerator) Run(generateLine func(k, v string) string, getOutFiles f
 			continue
 		}
 		key = g.formatString(key)
-		key = g.params.OutFile + "." + key
+		if g.params.KeyPrefix {
+			key = g.params.OutFile + "." + key
+		}
+
 		if _, ok := hadnledKeys[key]; ok {
 			log.Println("This key has been handled:", key)
 			continue
@@ -119,6 +123,8 @@ func (g *BaseGenerator) Run(generateLine func(k, v string) string, getOutFiles f
 		for k, v := range old {
 			if _, ok := hadnledKeys[k]; !ok {
 				// log.Printf("merge old key: %s, value: %s", k, v)
+				k = g.formatString(k)
+				v = g.formatString(v)
 				line := generateLine(k, v)
 				_, err := fmt.Fprintln(f, line)
 				if err != nil {
